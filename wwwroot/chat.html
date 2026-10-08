@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="utf-8" />
+    <title>SignalR Chat</title>
+
+    <style>
+        /* ====== Grundläggande styling ====== */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* ====== Chat-container ====== */
+        .chat-container {
+            width: 400px;
+            height: 600px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ====== Header ====== */
+        .chat-header {
+            background: #4a76fd;
+            color: white;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* ====== Meddelandelista ====== */
+        #messagesList {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            list-style: none;
+            margin: 0;
+        }
+
+        #messagesList li {
+            background: #e8e8e8;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            word-break: break-word;
+        }
+
+        /* ====== Input-sektion ====== */
+        .input-area {
+            display: flex;
+            padding: 12px;
+            background: #f7f7f7;
+            border-top: 1px solid #ddd;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            margin-right: 8px;
+        }
+
+        .input-area button {
+            padding: 10px 16px;
+            background: #4a76fd;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .input-area button:hover {
+            background: #3b5ed6;
+        }
+
+        /* ====== Användarnamnfält ====== */
+        .username-area {
+            padding: 12px;
+            background: #f7f7f7;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+        }
+
+        .username-area input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+
+        <!-- Header -->
+        <div class="chat-header">SignalR Chat</div>
+
+        <!-- Användarnamn -->
+        <div class="username-area">
+            <input type="text" id="userInput" placeholder="Ange ditt användarnamn..." />
+        </div>
+
+        <!-- Meddelanden -->
+        <ul id="messagesList"></ul>
+
+        <!-- Input -->
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Skriv ett meddelande..." />
+            <button id="sendButton">Skicka</button>
+        </div>
+    </div>
+
+    <!-- SignalR-klient -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+
+    <script>
+        // Skapa en anslutning till serverns hubb.
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chathub")
+            .build();
+
+        // När servern skickar ett meddelande.
+        connection.on("ReceiveMessage", (user, message) => {
+            const li = document.createElement("li");
+            li.textContent = `${user}: ${message}`;
+            document.getElementById("messagesList").appendChild(li);
+
+            // Scrolla automatiskt till botten
+            const list = document.getElementById("messagesList");
+            list.scrollTop = list.scrollHeight;
+        });
+
+        // Starta anslutningen.
+        connection.start().catch(err => console.error(err.toString()));
+
+        // Skicka meddelande.
+        document.getElementById("sendButton").addEventListener("click", () => {
+            const user = document.getElementById("userInput").value;
+            const message = document.getElementById("messageInput").value;
+
+            if (!user) {
+                alert("Du måste ange ett användarnamn.");
+                return;
+            }
+
+            connection.invoke("SendMessage", user, message)
+                .catch(err => console.error(err.toString()));
+
+            document.getElementById("messageInput").value = "";
+        });
+    </script>
+</body>
+</html>
